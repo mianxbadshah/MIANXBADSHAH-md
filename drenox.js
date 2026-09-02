@@ -6505,7 +6505,7 @@ case 'gali': {
 
     // Never insult a protected 𝐌𝐈𝐀𝐍𝐱𝐁𝐀𝐃𝐒𝐇𝐀𝐇 MD target, whether 𝐌𝐈𝐀𝐍𝐱𝐁𝐀𝐃𝐒𝐇𝐀𝐇 MD appears in the
     // command text, quoted/display name, or an explicitly mentioned profile.
-    if (containsProtectedmian x badshah(body, q, name, mentionedNames.join(' '))) {
+    if (containsProtectedBranding(body, q, name, mentionedNames.join(' '))) {
         return reply('𝐌𝐈𝐀𝐍𝐱𝐁𝐀𝐃𝐒𝐇𝐀𝐇 MD ABBU LAGTA HE KYA MADARCHOD INSANE.')
     }
 
@@ -7287,7 +7287,7 @@ return reply('Mention karo ya kisi message ka reply karo roast karne ke liye.')
 
 let target = m.mentionedJid[0] || m.quoted.sender
 const targetName = await bad.getName(target).catch(() => '')
-if (containsProtectedmian(body, targetName)) {
+if (containsProtectedBranding(body, targetName)) {
   return reply('🛡️ 𝐌𝐈𝐀𝐍𝐱𝐁𝐀𝐃𝐒𝐇𝐀𝐇 MD naam protected hai; roast command is target par disabled hai.')
 }
 
@@ -7680,7 +7680,7 @@ case 'insult': {
 
 let target = m.quoted ? m.quoted.sender : m.sender
 const targetName = await bad.getName(target).catch(() => '')
-if (containsProtectedmian(body, targetName)) {
+if (containsProtectedBranding(body, targetName)) {
   return reply('🛡️ 𝐌𝐈𝐀𝐍𝐱𝐁𝐀𝐃𝐒𝐇𝐀𝐇 MD naam protected hai; insult command is target par disabled hai.')
 }
 

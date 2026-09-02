@@ -55,10 +55,10 @@ app.post('/api/pair', async (req, res) => {
   }
 });
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'abbasi-official-web-pairing' }));
+app.get('/api/health', (_req, res) => res.status(200).json({ status: 'ok', service: 'MIANxBADSHAH MD pairing' }));
 
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'web', 'index.html')));
 
-app.listen(PORT, () => console.log(`🌐 Web pairing interface running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🌐 Web pairing interface running on 0.0.0.0:${PORT}`));
 
 module.exports = app;

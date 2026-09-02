@@ -36,7 +36,7 @@ async function initializeSystem() {
   }
 
   console.log(chalk.cyan('\n═══════════════════════════════════════════════'));
-  console.log(chalk.green('🌐 Pairing website: http://localhost:' + (process.env.PORT || 3000)));
+  console.log(chalk.green('🌐 Pairing website: http://0.0.0.0:' + (process.env.PORT || 3000)));
   console.log(chalk.green('✅ Website control system is active.'));
   console.log(chalk.green('✅ Existing pairing method remains unchanged.'));
   console.log(chalk.cyan('═══════════════════════════════════════════════\n'));
