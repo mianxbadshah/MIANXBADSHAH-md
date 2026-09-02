@@ -17,17 +17,20 @@ app.use(express.json({ limit: '16kb' }));
 app.use(express.static(path.join(__dirname, 'web')));
 
 function validateNumber(value) {
-  const number = String(value || '').replace(/[^0-9]/g, '');
+  let number = String(value || '').trim().replace(/[\s().-]/g, '');
+  if (number.startsWith('00')) number = number.slice(2);
+  number = number.replace(/^\+/, '').replace(/[^0-9]/g, '');
   if (!number) return { error: 'Please enter your WhatsApp number.' };
-  if (number.length < 7 || number.length > 15) return { error: 'Please enter a valid international number with 7–15 digits.' };
+  if (number.length < 7 || number.length > 15) return { error: 'Use a valid international WhatsApp number with 7–15 digits.' };
   return { number };
 }
 
 async function readPairingCode() {
-  const deadline = Date.now() + 15000;
+  const deadline = Date.now() + 45000;
   while (Date.now() < deadline) {
     try {
       const data = JSON.parse(await fsp.readFile(pairingFile, 'utf8'));
+      if (data.error) throw new Error(data.error);
       if (data.code && data.timestamp && Date.now() - new Date(data.timestamp).getTime() < 120000) return data;
     } catch (_) {}
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -44,6 +47,7 @@ app.post('/api/pair', async (req, res) => {
   pairingInProgress = true;
   try {
     await fsp.mkdir(pairingRoot, { recursive: true });
+    await fsp.rm(pairingFile, { force: true });
     await startpairing(`${result.number}@s.whatsapp.net`);
     const pairing = await readPairingCode();
     return res.json({ code: pairing.code, number: result.number, expiresIn: 120 });

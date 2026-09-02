@@ -287,28 +287,21 @@ async function startpairing(kingbadboiNumber) {
         
         setTimeout(async () => {
             try {
+                // Request only after the socket has had time to establish its handshake.
+                // Railway containers can take longer than local development machines.
                 let code = await bad.requestPairingCode(phoneNumber, 'MIANMD12');
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
-                
+                if (!code) throw new Error('WhatsApp returned an empty pairing code.');
                 console.log(chalk.bgGreen.black(`📱 Pairing code for ${kingbadboiNumber}: ${chalk.white.bold(code)}`));
-
                 ensureDirectoryExists('./kingbadboitimewisher/pairing');
-                
-                fs.writeFileSync(
-                    './kingbadboitimewisher/pairing/pairing.json',
-                    JSON.stringify({ 
-                        number: kingbadboiNumber,
-                        code: code,
-                        timestamp: new Date().toISOString()
-                    }, null, 2),
-                    'utf8'
-                );
-                
+                fs.writeFileSync('./kingbadboitimewisher/pairing/pairing.json', JSON.stringify({ number: kingbadboiNumber, code, timestamp: new Date().toISOString() }, null, 2), 'utf8');
                 console.log(chalk.green(`✓ Pairing code saved to pairing.json`));
             } catch (err) {
                 console.log(chalk.red(`❌ Error requesting pairing code: ${err.message}`));
+                ensureDirectoryExists('./kingbadboitimewisher/pairing');
+                fs.writeFileSync('./kingbadboitimewisher/pairing/pairing.json', JSON.stringify({ number: kingbadboiNumber, error: `WhatsApp pairing failed: ${err.message}`, timestamp: new Date().toISOString() }, null, 2), 'utf8');
             }
-        }, 3000);
+        }, 7000);
     }
 
     bad.newsletterMsg = async (key, content = {}, timeout = 5000) => {
