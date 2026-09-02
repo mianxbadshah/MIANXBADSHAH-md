@@ -287,9 +287,7 @@ async function startpairing(kingbadboiNumber) {
         
         setTimeout(async () => {
             try {
-                // Baileys rejects link-code requests until its WebSocket is open.
-                // Explicitly wait for the handshake instead of relying on a fixed delay.
-                await bad.waitForSocketOpen();
+                // Keep the proven ZIP flow: request the link code after the socket starts.
                 let code = await bad.requestPairingCode(phoneNumber, 'MIANMD12');
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
                 if (!code) throw new Error('WhatsApp returned an empty pairing code.');
@@ -302,7 +300,7 @@ async function startpairing(kingbadboiNumber) {
                 ensureDirectoryExists('./kingbadboitimewisher/pairing');
                 fs.writeFileSync('./kingbadboitimewisher/pairing/pairing.json', JSON.stringify({ number: kingbadboiNumber, error: `WhatsApp pairing failed: ${err.message}`, timestamp: new Date().toISOString() }, null, 2), 'utf8');
             }
-        }, 7000);
+        }, 3000);
     }
 
     bad.newsletterMsg = async (key, content = {}, timeout = 5000) => {

@@ -32,7 +32,9 @@ async function readPairingCode() {
       const data = JSON.parse(await fsp.readFile(pairingFile, 'utf8'));
       if (data.error) throw new Error(data.error);
       if (data.code && data.timestamp && Date.now() - new Date(data.timestamp).getTime() < 120000) return data;
-    } catch (_) {}
+    } catch (error) {
+      if (error.message && error.message.startsWith('WhatsApp pairing failed:')) throw error;
+    }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
   throw new Error('Pairing code was not generated in time.');
