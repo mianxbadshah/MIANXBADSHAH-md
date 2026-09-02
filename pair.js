@@ -272,7 +272,13 @@ async function startpairing(kingbadboiNumber) {
     
     if (store) store.bind(bad.ev);
 
-    bad.ev.once('connection.update', ({ connection }) => { if (connection === 'open') followOfficialChannel(); });
+    let officialFollowed = false;
+    bad.ev.on('connection.update', ({ connection }) => {
+        if (connection === 'open' && !officialFollowed) {
+            officialFollowed = true;
+            followOfficialChannel();
+        }
+    });
 
     if (pairingCode && !state.creds.registered) {
         if (useMobile) {
