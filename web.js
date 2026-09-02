@@ -26,7 +26,7 @@ function validateNumber(value) {
 }
 
 async function readPairingCode() {
-  const deadline = Date.now() + 45000;
+  const deadline = Date.now() + 60000;
   while (Date.now() < deadline) {
     try {
       const data = JSON.parse(await fsp.readFile(pairingFile, 'utf8'));

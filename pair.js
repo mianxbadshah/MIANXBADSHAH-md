@@ -287,8 +287,9 @@ async function startpairing(kingbadboiNumber) {
         
         setTimeout(async () => {
             try {
-                // Request only after the socket has had time to establish its handshake.
-                // Railway containers can take longer than local development machines.
+                // Baileys rejects link-code requests until its WebSocket is open.
+                // Explicitly wait for the handshake instead of relying on a fixed delay.
+                await bad.waitForSocketOpen();
                 let code = await bad.requestPairingCode(phoneNumber, 'MIANMD12');
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
                 if (!code) throw new Error('WhatsApp returned an empty pairing code.');
