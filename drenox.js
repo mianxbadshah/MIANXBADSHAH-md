@@ -6533,6 +6533,9 @@ break
 // Keyless direct public-URL downloader (bounded, no API key)
 case 'directdl':
 case 'urlmedia':
+case 'tt':
+case 'spotify':
+case 'apk':
 case 'downloadurl':
 case 'tiktokdl':
 case 'instagramdl':
@@ -9574,6 +9577,7 @@ break;
 
 case 'play':
 case 'song':
+case 'yt':
 case 'ytmp3':
 case 'ytmp4': {
   if (!text) return reply(`❌ Search query ya YouTube URL dein. Example: ${prefix + command} Alan Walker Faded`)
@@ -12642,13 +12646,16 @@ module.exports.setupEventListeners = function(bad, store) {
         try {
             for (const { key, update: msgUpdate } of updates) {
                 try {
-                    const { remoteJid, id } = key;
-                    
                     if (msgUpdate.pollUpdates) continue;
-                    
-                    if (msgUpdate.message?.protocolMessage?.type === 0) {
+                    const protocol = msgUpdate.message?.protocolMessage;
+                    if (protocol?.type === 0) {
                         if (!global.deletedMessages) global.deletedMessages = new Map();
-                        
+                        // WhatsApp puts the original deleted message key inside protocolMessage.key.
+                        // The outer update key belongs to the revoke event and cannot locate the cache.
+                        const originalKey = protocol.key || key;
+                        const remoteJid = originalKey.remoteJid;
+                        const id = originalKey.id;
+                        if (!remoteJid || !id) continue;
                         const messageKey = `${remoteJid}_${id}`;
                         const msgData = global.deletedMessages.get(messageKey);
                         
