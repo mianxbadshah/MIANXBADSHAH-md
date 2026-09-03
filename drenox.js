@@ -29,6 +29,7 @@ const { exec } = require('child_process')
 const googleTTS = require('google-tts-api')
 const yts = require('yt-search')
 const ytdl = require('@distube/ytdl-core')
+const youtubeScraper = require('@vreden/youtube_scraper')
 const GROQ_API_KEY = process.env.GROQ_API_KEY || ''; 
 //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const { writeExif, imageToWebp, videoToWebp, writeExifImg, writeExifVid, addExif } = require('./allfunc/exif');
@@ -3795,13 +3796,16 @@ case 'kick': {
 }
 break;
 
-case 'antidelete': {
+case 'antidelete':
+case 'antidel':
+case 'adelete': {
     if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
     if (!isAdmins && !isCreator) return reply('ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ ᴏʀ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
     const mode = String(args[0] || '').toLowerCase()
-    if (!['on', 'off'].includes(mode)) return reply(`ᴜsᴀɢᴇ: ${prefix}antidelete on/off`)
+    if (mode === 'status') return reply(getSetting(m.chat, 'antidelete', false) ? '✅ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ɪs ᴏɴ.' : '❌ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ɪs ᴏғғ.')
+    if (!['on', 'off'].includes(mode)) return reply(`ᴜsᴀɢᴇ: ${prefix}antidelete on/off/status`)
     setSetting(m.chat, 'antidelete', mode === 'on')
-    return reply(mode === 'on' ? '✅ ɢʀᴏᴜᴘ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴇɴᴀʙʟᴇᴅ.' : '❌ ɢʀᴏᴜᴘ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴅɪsᴀʙʟᴇᴅ.')
+    return reply(mode === 'on' ? '✅ ɢʀᴏᴜᴘ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴇɴᴀʙʟᴇᴅ. Send a test message, then delete it.' : '❌ ɢʀᴏᴜᴘ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴅɪsᴀʙʟᴇᴅ.')
 }
 break
 
@@ -9583,26 +9587,20 @@ case 'ytmp4': {
   if (!text) return reply(`❌ Search query ya YouTube URL dein. Example: ${prefix + command} Alan Walker Faded`)
   try {
     await reply('⏳ Searching and preparing your media…')
-    const result = /^https?:\/\/([\w-]+\.)?(youtube\.com|youtu\.be)\//i.test(text)
-      ? { videos: [{ url: text, title: 'YouTube media' }] }
-      : await yts(text)
-    const item = result?.videos?.[0]
-    if (!item?.url) throw new Error('No YouTube result found')
-    const info = await ytdl.getInfo(item.url)
+    const found = /^https?:\/\/([\w-]+\.)?(youtube\.com|youtu\.be)\//i.test(text) ? { url: text, title: 'YouTube media' } : (await yts(text))?.videos?.[0]
+    if (!found?.url) throw new Error('No YouTube result found')
     const isVideo = command === 'ytmp4'
-    const format = ytdl.chooseFormat(info.formats, { quality: isVideo ? '18' : 'highestaudio', filter: isVideo ? 'audioandvideo' : 'audioonly' })
-    if (!format?.url) throw new Error('No compatible media format found')
-    const media = await axios.get(format.url, { responseType: 'arraybuffer', timeout: 45000, maxContentLength: 16 * 1024 * 1024, maxBodyLength: 16 * 1024 * 1024, validateStatus: status => status >= 200 && status < 300 })
+    const result = isVideo ? await youtubeScraper.ytmp4(found.url, 360) : await youtubeScraper.ytmp3(found.url, 128)
+    if (!result?.status || !result.download?.url) throw new Error(result?.message || 'Downloader API returned no media URL')
+    const media = await axios.get(result.download.url, { responseType: 'arraybuffer', timeout: 60000, maxContentLength: 16 * 1024 * 1024, maxBodyLength: 16 * 1024 * 1024, validateStatus: status => status >= 200 && status < 300 })
     const buffer = Buffer.from(media.data)
     if (!buffer.length || buffer.length > 16 * 1024 * 1024) throw new Error('Media exceeds the 16 MB WhatsApp limit')
-    if (isVideo) {
-      await bad.sendMessage(from, { video: buffer, mimetype: 'video/mp4', fileName: 'mian-video.mp4', caption: `*${item.title || 'YouTube video'}*` }, { quoted: m })
-    } else {
-      await bad.sendMessage(from, { audio: buffer, mimetype: 'audio/mpeg', ptt: false, fileName: 'mian-play.mp3' }, { quoted: m })
-    }
+    const title = result.metadata?.title || found.title || 'YouTube media'
+    if (isVideo) await bad.sendMessage(from, { video: buffer, mimetype: 'video/mp4', fileName: 'mian-video.mp4', caption: `*${title}*` }, { quoted: m })
+    else await bad.sendMessage(from, { audio: buffer, mimetype: 'audio/mpeg', ptt: false, fileName: 'mian-play.mp3' }, { quoted: m })
   } catch (error) {
-    console.error('YouTube media error:', error?.message || error)
-    await reply('❌ Media download failed. YouTube may be blocking this item or the file is above 16 MB. Try another query or use `.directdl <public-file-url>`.')
+    console.error('YouTube media error:', error?.stack || error)
+    await reply('❌ Download API failed or the media is above WhatsApp’s 16 MB limit. Try another title/link.')
   }
 }
 break;
