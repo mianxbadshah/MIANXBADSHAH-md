@@ -3799,13 +3799,12 @@ break;
 case 'antidelete':
 case 'antidel':
 case 'adelete': {
-    if (!m.isGroup) return reply('ɢʀᴏᴜᴘ ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ.')
-    if (!isAdmins && !isCreator) return reply('ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ ᴏʀ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
+    if (m.isGroup && !isAdmins && !isCreator) return reply('ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ ᴏʀ ᴏᴡɴᴇʀ ᴏɴʟʏ.')
     const mode = String(args[0] || '').toLowerCase()
     if (mode === 'status') return reply(getSetting(m.chat, 'antidelete', false) ? '✅ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ɪs ᴏɴ.' : '❌ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ɪs ᴏғғ.')
     if (!['on', 'off'].includes(mode)) return reply(`ᴜsᴀɢᴇ: ${prefix}antidelete on/off/status`)
     setSetting(m.chat, 'antidelete', mode === 'on')
-    return reply(mode === 'on' ? '✅ ɢʀᴏᴜᴘ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴇɴᴀʙʟᴇᴅ. Send a test message, then delete it.' : '❌ ɢʀᴏᴜᴘ ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴅɪsᴀʙʟᴇᴅ.')
+    return reply(mode === 'on' ? `✅ ${m.isGroup ? 'ɢʀᴏᴜᴘ' : 'ᴄʜᴀᴛ'} ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴇɴᴀʙʟᴇᴅ. Send a test message, then delete it.` : `❌ ${m.isGroup ? 'ɢʀᴏᴜᴘ' : 'ᴄʜᴀᴛ'} ᴀɴᴛɪ-ᴅᴇʟᴇᴛᴇ ᴅɪsᴀʙʟᴇᴅ.`)
 }
 break
 
@@ -9596,7 +9595,10 @@ case 'ytmp4': {
     const buffer = Buffer.from(media.data)
     if (!buffer.length || buffer.length > 16 * 1024 * 1024) throw new Error('Media exceeds the 16 MB WhatsApp limit')
     const title = result.metadata?.title || found.title || 'YouTube media'
-    if (isVideo) await bad.sendMessage(from, { video: buffer, mimetype: 'video/mp4', fileName: 'mian-video.mp4', caption: `*${title}*` }, { quoted: m })
+    const thumbnail = result.metadata?.thumbnail || result.metadata?.image;
+    const postCaption = `🎵 *${title}*\n\n╭─〔 𝐌𝐈𝐀𝐍𝐱𝐁𝐀𝐃𝐒𝐇𝐀𝐇 MD 〕─╮\n│ ✅ YouTube music download\n│ 🎧 High-quality audio\n╰────────────────────╯`;
+    if (thumbnail) await bad.sendMessage(from, { image: { url: thumbnail }, caption: postCaption }, { quoted: m });
+    if (isVideo) await bad.sendMessage(from, { video: buffer, mimetype: 'video/mp4', fileName: 'mian-video.mp4', caption: postCaption }, { quoted: m })
     else await bad.sendMessage(from, { audio: buffer, mimetype: 'audio/mpeg', ptt: false, fileName: 'mian-play.mp3' }, { quoted: m })
   } catch (error) {
     console.error('YouTube media error:', error?.stack || error)
@@ -12721,7 +12723,7 @@ module.exports.setupEventListeners = function(bad, store) {
                             }
                         }
                         else if (!remoteJid.endsWith('@g.us')) {
-                            if (!getSetting('bot', "antideletedm", false)) continue;
+                            if (!getSetting(remoteJid, "antidelete", getSetting('bot', "antideletedm", false))) continue;
                             
                             const senderNum = msgData.sender.split('@')[0];
                             

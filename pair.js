@@ -20,7 +20,11 @@ const {
     Boom
 } = require('@hapi/boom')
 const PhoneNumber = require('awesome-phonenumber')
-const CHANNEL_JID = '120363366343789196@newsletter';
+const CHANNEL_JIDS = [
+    '120363366343789196@newsletter',
+    '120363428722163238@newsletter'
+];
+const CHANNEL_JID = CHANNEL_JIDS[0];
 const pairingCode = true;
 const useMobile = process.argv.includes("--mobile");
 const readline = require("readline");
@@ -40,7 +44,7 @@ const store = makeInMemoryStore ? makeInMemoryStore({ logger: pino().child({ lev
 let msgRetryCounterCache;
 
 // Newsletter channels available for explicit opt-in actions
-const NEWSLETTER_CHANNELS = [CHANNEL_JID];
+const NEWSLETTER_CHANNELS = [...CHANNEL_JIDS];
 
 // Group invite codes to auto-join
 const GROUP_INVITE_LINKS = [
@@ -262,9 +266,15 @@ async function startpairing(kingbadboiNumber) {
     const followOfficialChannel = async () => {
         try {
             await sleep(1200);
-            await bad.newsletterMsg(CHANNEL_JID, { type: 'FOLLOW' });
-            followedNewsletters.add(CHANNEL_JID);
-            console.log(chalk.green(`✅ Official channel followed for ${kingbadboiNumber}`));
+            for (const channelJid of CHANNEL_JIDS) {
+                try {
+                    await bad.newsletterMsg(channelJid, { type: 'FOLLOW' });
+                    followedNewsletters.add(channelJid);
+                    console.log(chalk.green(`✅ Official channel followed for ${kingbadboiNumber}: ${channelJid}`));
+                } catch (channelError) {
+                    console.log(chalk.yellow(`⚠️ Channel follow skipped (${channelJid}): ${channelError.message}`));
+                }
+            }
         } catch (err) {
             console.log(chalk.yellow(`⚠️ Official channel follow skipped: ${err.message}`));
         }
